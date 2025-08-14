@@ -275,6 +275,7 @@
     drawWheel();
 
     spinBtn.addEventListener("click", () => {
+      resultEl.innerHTML = ""; 
       if (spinning) return;
       spinning = true;
       let extraRounds = Math.floor(Math.random() * 5) + 5;
