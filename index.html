@@ -1,104 +1,114 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vòng quay may mắn</title>
-<style>
-  body { text-align: center; font-family: sans-serif; margin:0; padding:0;}
-  canvas { display:block; margin:20px auto; background:#fff; }
-  #spinBtn { padding: 10px 20px; font-size: 16px; margin-top: 20px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vòng quay may mắn</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #wheel-container {
+      width: 90vw;
+      max-width: 500px; /* giới hạn tối đa để không bị vỡ hình */
+      aspect-ratio: 1 / 1; /* luôn giữ hình tròn */
+      position: relative;
+    }
+    #wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 5px solid #333;
+      transition: transform 4s ease-out;
+    }
+    #spin-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #28a745;
+      color: #fff;
+      cursor: pointer;
+    }
+    #spin-btn:active {
+      background: #218838;
+    }
+    #pointer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0; 
+      height: 0; 
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 30px solid red;
+      transform: translate(-50%, -100%);
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-<h2>Vòng quay may mắn</h2>
-<canvas id="wheel" width="500" height="500"></canvas><br>
-<button id="spinBtn">Quay!</button>
-<p id="result"></p>
+  <div id="wheel-container">
+    <div id="pointer"></div>
+    <canvas id="wheel"></canvas>
+  </div>
+  <button id="spin-btn">Quay</button>
 
-<script>
-// ==== Danh sách giải thưởng ====
-const prizes = [
-  { name: "Giải 1", weight: 3 },
-  { name: "Giải 2", weight: 1, special: true },
-  { name: "Giải 3", weight: 2 },
-  { name: "Giải 4", weight: 5 },
-  { name: "Giải 5", weight: 1 },
-  { name: "Giải 6", weight: 2 },
-  { name: "Giải 7", weight: 4 },
-  { name: "Giải 8", weight: 2 },
-  { name: "Giải 9", weight: 3 },
-  { name: "Giải 10", weight: 2 }
-];
+  <script>
+    const wheelCanvas = document.getElementById('wheel');
+    const ctx = wheelCanvas.getContext('2d');
 
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-const size = prizes.length;
-const arc = (2 * Math.PI) / size;
-
-let currentAngle = 0;
-let spinning = false;
-
-function drawWheel() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for (let i = 0; i < size; i++) {
-    ctx.beginPath();
-    ctx.fillStyle = i % 2 === 0 ? "#f9c74f" : "#90be6d";
-    ctx.moveTo(250, 250);
-    ctx.arc(250, 250, 250, i * arc + currentAngle, (i + 1) * arc + currentAngle);
-    ctx.lineTo(250, 250);
-    ctx.fill();
-    ctx.save();
-    ctx.translate(250, 250);
-    ctx.rotate(i * arc + arc / 2 + currentAngle);
-    ctx.fillStyle = "#000";
-    ctx.font = "16px sans-serif";
-    ctx.fillText(prizes[i].name, 100, 5);
-    ctx.restore();
-  }
-}
-drawWheel();
-
-document.getElementById("spinBtn").onclick = function() {
-  if (spinning) return;
-  spinning = true;
-
-  const spinAngle = Math.random() * 360 + 720; // quay ít nhất 2 vòng
-  const spinTime = 4000; // ms
-  const startAngle = currentAngle;
-  const targetAngle = startAngle + (spinAngle * Math.PI / 180);
-  const startTime = performance.now();
-
-  function animate(time) {
-    let t = (time - startTime) / spinTime;
-    if (t > 1) t = 1;
-    currentAngle = startAngle + (targetAngle - startAngle) * easeOut(t);
-    drawWheel();
-    if (t < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      spinning = false;
-      const winner = pickPrize();
-      document.getElementById("result").innerText = "Bạn trúng: " + winner.name;
+    function resizeWheel() {
+      const container = document.getElementById('wheel-container');
+      const size = container.offsetWidth;
+      wheelCanvas.width = size;
+      wheelCanvas.height = size;
+      drawWheel();
     }
-  }
-  requestAnimationFrame(animate);
-};
 
-function easeOut(t) {
-  return 1 - Math.pow(1-t, 3);
-}
+    const segments = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const colors = ['#f44336','#e91e63','#9c27b0','#3f51b5','#03a9f4','#4caf50'];
 
-function pickPrize() {
-  const available = prizes.filter(p => !p.special);
-  const totalWeight = available.reduce((sum,p) => sum + p.weight, 0);
-  let r = Math.random() * totalWeight;
-  for (let p of available) {
-    if (r < p.weight) return p;
-    r -= p.weight;
-  }
-  return available[available.length - 1];
-}
-</script>
+    function drawWheel() {
+      const size = wheelCanvas.width;
+      const arc = 2 * Math.PI / segments.length;
+      for(let i = 0; i < segments.length; i++){
+        ctx.beginPath();
+        ctx.fillStyle = colors[i];
+        ctx.moveTo(size/2, size/2);
+        ctx.arc(size/2, size/2, size/2, arc*i, arc*(i+1));
+        ctx.lineTo(size/2, size/2);
+        ctx.fill();
+        // Vẽ text
+        ctx.save();
+        ctx.translate(size/2, size/2);
+        ctx.rotate(arc * i + arc/2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = `${size/15}px Arial`;
+        ctx.fillText(segments[i], size/2 - 10, 10);
+        ctx.restore();
+      }
+    }
+
+    let rotation = 0;
+    document.getElementById('spin-btn').addEventListener('click', () => {
+      const randomSpin = Math.floor(Math.random() * 360) + 1800; // quay ít nhất 5 vòng
+      rotation += randomSpin;
+      wheelCanvas.style.transform = `rotate(${rotation}deg)`;
+    });
+
+    window.addEventListener('resize', resizeWheel);
+    resizeWheel();
+  </script>
 </body>
 </html>
