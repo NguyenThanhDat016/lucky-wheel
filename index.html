@@ -2,113 +2,192 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Vòng quay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vòng quay may mắn</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: #f0f0f0;
+      background: linear-gradient(to bottom right,  cyan,pink,white);
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
-      overflow: hidden;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
     }
-    #wheel-container {
-      width: 90vw;
-      max-width: 500px; /* giới hạn tối đa để không bị vỡ hình */
-      aspect-ratio: 1 / 1; /* luôn giữ hình tròn */
+
+    .wheel-container {
       position: relative;
+      width: min(90vw, 90vh);
+      height: min(90vw, 90vh);
     }
-    #wheel {
+
+    .wheel {
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 5px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
       transition: transform 4s ease-out;
     }
-    #spin-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      background: #28a745;
-      color: #fff;
-      cursor: pointer;
-    }
-    #spin-btn:active {
-      background: #218838;
-    }
-    #pointer {
+
+    .center-button {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 0; 
-      height: 0; 
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-bottom: 30px solid red;
-      transform: translate(-50%, -100%);
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #ff5722;
+      color: #fff;
+      border: none;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
       z-index: 10;
+    }
+
+    .pointer {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 30px solid red; 
+      z-index: 10;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      image-rendering: crisp-edges;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .wheel-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px; 
     }
   </style>
 </head>
+
+<h1 id="wheel-title">Anh Tú Studio</h1>
+
 <body>
-  <div id="wheel-container">
-    <div id="pointer"></div>
-    <canvas id="wheel"></canvas>
+  <div class="wheel-container">
+    <div class="pointer"></div>
+      <canvas id="wheelCanvas"></canvas>
+    <button class="center-button" id="spinBtn">QUAY</button>
   </div>
-  <button id="spin-btn">Quay</button>
+  <div class="result" id="result"></div>
 
   <script>
-    const wheelCanvas = document.getElementById('wheel');
-    const ctx = wheelCanvas.getContext('2d');
+    const prizes = [
+      { text: "0%", special: false, noti: '' },
+      { text: "10%", special: false,  noti: '' },
+      { text: "20%", special: true,  noti: '' },
+      { text: "30%", special: true,  noti: '' },
+      { text: "40%", special: true, noti: '' },
+      { text: "50%", special: true,  noti: '' },
+      { text: "60%", special: true,  noti: '' },
+      { text: "70%", special: true,  noti: '' },
+      { text: "80%", special: true,  noti: '' },
+      { text: "Ảnh tráng gương", special: true,  noti: '' },
+    ];
 
-    function resizeWheel() {
-      const container = document.getElementById('wheel-container');
-      const size = container.offsetWidth;
-      wheelCanvas.width = size;
-      wheelCanvas.height = size;
-      drawWheel();
-    }
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const resultEl = document.getElementById("result");
 
-    const segments = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const colors = ['#f44336','#e91e63','#9c27b0','#3f51b5','#03a9f4','#4caf50'];
+    const dpr = window.devicePixelRatio || 1;
+    let size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9);
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.scale(dpr, dpr);
+
+    const radius = size / 2;
+    const arc = (2 * Math.PI) / prizes.length;
+
+    let currentAngle = 0;
+    let spinning = false;
 
     function drawWheel() {
-      const size = wheelCanvas.width;
-      const arc = 2 * Math.PI / segments.length;
-      for(let i = 0; i < segments.length; i++){
+      ctx.clearRect(0, 0, size, size);
+      for (let i = 0; i < prizes.length; i++) {
+        const angle = currentAngle + i * arc;
         ctx.beginPath();
-        ctx.fillStyle = colors[i];
-        ctx.moveTo(size/2, size/2);
-        ctx.arc(size/2, size/2, size/2, arc*i, arc*(i+1));
-        ctx.lineTo(size/2, size/2);
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius - 5, angle, angle + arc);
+        ctx.fillStyle = i % 2 === 0 ? "#74d1ed" : "#f1b5f5";
         ctx.fill();
-        // Vẽ text
+
         ctx.save();
-        ctx.translate(size/2, size/2);
-        ctx.rotate(arc * i + arc/2);
+        ctx.translate(radius, radius);
+        ctx.rotate(angle + arc / 2);
         ctx.textAlign = "right";
         ctx.fillStyle = "#fff";
-        ctx.font = `${size/15}px Arial`;
-        ctx.fillText(segments[i], size/2 - 10, 10);
+        ctx.font = `${size / 20}px Arial`;
+        ctx.fillText(prizes[i].text, radius - 15, 10);
         ctx.restore();
       }
+
+      const borderGradient = ctx.createLinearGradient(0, 0, size, size);
+      borderGradient.addColorStop(0, '#FFF9C4');
+      borderGradient.addColorStop(0.5, '#FFD700');
+      borderGradient.addColorStop(1, '#FFA000'); 
+
+      ctx.beginPath();
+      ctx.arc(radius, radius, radius - 5, 0, 2 * Math.PI);
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = borderGradient;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.9)';
+      ctx.stroke();
     }
 
-    let rotation = 0;
-    document.getElementById('spin-btn').addEventListener('click', () => {
-      const randomSpin = Math.floor(Math.random() * 360) + 1800; // quay ít nhất 5 vòng
-      rotation += randomSpin;
-      wheelCanvas.style.transform = `rotate(${rotation}deg)`;
-    });
+    drawWheel();
 
-    window.addEventListener('resize', resizeWheel);
-    resizeWheel();
+    spinBtn.addEventListener("click", () => {
+      if (spinning) return;
+      spinning = true;
+      let extraRounds = Math.floor(Math.random() * 5) + 5;
+      let angle, selectedIndex;
+      do {
+        angle = extraRounds * 360 + Math.random() * 360;
+        const finalAngleDeg = ((currentAngle * 180 / Math.PI) + angle + 90) % 360; 
+        selectedIndex = Math.floor(prizes.length - (finalAngleDeg / 360) * prizes.length) % prizes.length;
+        if (selectedIndex < 0) selectedIndex += prizes.length;
+      } while (prizes[selectedIndex].special);
+      currentAngle += angle * (Math.PI / 180);
+      canvas.style.transition = "transform 4s ease-out";
+      canvas.style.transform = `rotate(${currentAngle}rad)`; 
+      canvas.addEventListener("transitionend", function handler() {
+        canvas.style.transition = "none";
+        spinning = false;
+        resultEl.textContent = `Chúc mừng! ${prizes[selectedIndex].noti}`;
+        canvas.removeEventListener("transitionend", handler);
+      });
+    });
   </script>
 </body>
 </html>
