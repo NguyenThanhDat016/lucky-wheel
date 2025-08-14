@@ -243,12 +243,15 @@
         ctx.translate(radius, radius);
         ctx.rotate(angle + arc / 2);
         ctx.textAlign = "right";
-        ctx.font = `${size / 20}px Arial`;
+
+        // kiểm tra text dài để chỉnh font
+        let fontSize = size / 20;
+        if (prizes[i].text === "May mắn lần sau" || prizes[i].text === "Ảnh tráng gương") {
+          fontSize = size / 26; // thu nhỏ một chút
+        }
+
         ctx.fillStyle = "#fff";
-        ctx.shadowColor = "rgba(0,0,0,0.7)";
-        ctx.shadowBlur = 4;   // tạo bóng chữ
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
+        ctx.font = `${fontSize}px Arial`;
         ctx.fillText(prizes[i].text, radius - 15, 10);
         ctx.restore();
       }
