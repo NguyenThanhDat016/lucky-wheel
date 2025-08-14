@@ -63,6 +63,7 @@
       border-right: 10px solid transparent;
       border-top: 30px solid red; 
       z-index: 10;
+      filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.6));
     }
 
     canvas {
@@ -79,37 +80,75 @@
       text-align: center;
     }
 
-    .wheel-title {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px; 
+    .spin-button {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: rgb(218, 37, 29);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 20px rgba(224, 204, 16, 0.829);
+      border: none;
+      outline: none;
+    }
+
+    .spin-button::before {
+      outline: none;
+      content: "★";
+      font-size: 36px;
+      color: rgb(255, 255, 0);
     }
   </style>
 </head>
 
 <h1 id="wheel-title">Anh Tú Studio</h1>
-
+<style>
+@font-face {
+  font-family: 'FleurDeLeah';
+  src: url('fonts/MTD-Colatin.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+#wheel-title {
+ font-family: 'FleurDeLeah', cursive;
+  text-align: center;
+  font-size: 64px;     
+  color: #FFD700;           
+  font-weight: normal;       
+  /* -webkit-text-stroke: 1px #bea517ec;
+  text-stroke: 1px #bea517ec; */
+  text-shadow: 
+    3px 3px 6px rgba(0,0,0,0.7),
+    -1px -1px 2px rgba(0,0,0,0.5);
+  margin-bottom: 10px;
+}
+</style>
 <body>
   <div class="wheel-container">
     <div class="pointer"></div>
-      <canvas id="wheelCanvas"></canvas>
-    <button class="center-button" id="spinBtn">QUAY</button>
+    <canvas id="wheelCanvas"></canvas>
+    <button class="spin-button" id="spinBtn"></button>
   </div>
   <div class="result" id="result"></div>
 
   <script>
     const prizes = [
-      { text: "0%", special: false, noti: '' },
-      { text: "10%", special: false,  noti: '' },
-      { text: "20%", special: true,  noti: '' },
-      { text: "30%", special: true,  noti: '' },
-      { text: "40%", special: true, noti: '' },
-      { text: "50%", special: true,  noti: '' },
-      { text: "60%", special: true,  noti: '' },
-      { text: "70%", special: true,  noti: '' },
-      { text: "80%", special: true,  noti: '' },
-      { text: "Ảnh tráng gương", special: true,  noti: '' },
+      { text: "May mắn lần sau", special: false, noti: 'Chúc bạn may mắn lần sau' },
+      { text: "10%", special: false,  noti: 'Wow! Bạn được giảm 10% nhé' },
+      { text: "20%", special: true,  noti: 'Wow! Bạn được giảm 20% nhé' },
+      { text: "30%", special: true,  noti: 'Wow! Bạn được giảm 30% nhé' },
+      { text: "40%", special: true, noti: 'Wow! Bạn được giảm 40% nhé' },
+      { text: "Ảnh tráng gương", special: true,  noti: 'Wow! Bạn được tặng 1 ảnh tráng gương nè' },
+      { text: "50%", special: true,  noti: 'Wow! Bạn được giảm 50% nhé' },
+      { text: "60%", special: true,  noti: 'Wow! Bạn được giảm 60% nhé' },
+      { text: "70%", special: true,  noti: 'Wow! Bạn được giảm 70% nhé' },
+      { text: "80%", special: true,  noti: 'Wow! Bạn được giảm 80% nhé' },
     ];
 
     const canvas = document.getElementById("wheelCanvas");
@@ -131,26 +170,90 @@
     let currentAngle = 0;
     let spinning = false;
 
+    // function drawWheel() {
+    //   ctx.clearRect(0, 0, size, size);
+    //   for (let i = 0; i < prizes.length; i++) {
+    //     const angle = currentAngle + i * arc;
+    //     ctx.beginPath();
+    //     ctx.moveTo(radius, radius);
+    //     ctx.arc(radius, radius, radius - 5, angle, angle + arc);
+    //     ctx.fillStyle = i % 2 === 0 ? "#74d1ed" : "#f1b5f5";
+    //     ctx.fill();
+
+    //     ctx.save();
+    //     ctx.translate(radius, radius);
+    //     ctx.rotate(angle + arc / 2);
+    //     ctx.textAlign = "right";
+    //     ctx.fillStyle = "#fff";
+    //     ctx.font = `${size / 20}px Arial`;
+    //     ctx.fillText(prizes[i].text, radius - 15, 10);
+    //     ctx.restore();
+    //   }
+
+    //   const borderGradient = ctx.createLinearGradient(0, 0, size, size);
+    //   borderGradient.addColorStop(0, '#FFF9C4');
+    //   borderGradient.addColorStop(0.5, '#FFD700');
+    //   borderGradient.addColorStop(1, '#FFA000'); 
+
+    //   ctx.beginPath();
+    //   ctx.arc(radius, radius, radius - 5, 0, 2 * Math.PI);
+    //   ctx.lineWidth = 12;
+    //   ctx.strokeStyle = borderGradient;
+    //   ctx.shadowBlur = 20;
+    //   ctx.shadowColor = 'rgba(255, 215, 0, 0.9)';
+    //   ctx.stroke();
+    // }
+
     function drawWheel() {
       ctx.clearRect(0, 0, size, size);
       for (let i = 0; i < prizes.length; i++) {
         const angle = currentAngle + i * arc;
+
         ctx.beginPath();
         ctx.moveTo(radius, radius);
         ctx.arc(radius, radius, radius - 5, angle, angle + arc);
-        ctx.fillStyle = i % 2 === 0 ? "#74d1ed" : "#f1b5f5";
+        ctx.closePath();
+
+        const sliceGradient = ctx.createLinearGradient(
+          radius + Math.cos(angle) * radius,
+          radius + Math.sin(angle) * radius,
+          radius + Math.cos(angle + arc) * radius,
+          radius + Math.sin(angle + arc) * radius
+        );
+        if (i % 2 === 0) {
+          sliceGradient.addColorStop(0, "#b2faff");  // sáng
+          sliceGradient.addColorStop(0.5, "#00e1ff"); 
+          sliceGradient.addColorStop(1, "#007a99");  // tối
+        } else {
+          sliceGradient.addColorStop(0, "#ffd4f9");  // sáng
+          sliceGradient.addColorStop(0.5, "#ff8ae2");
+          sliceGradient.addColorStop(1, "#c800aa");  // tối
+        }
+
+        ctx.fillStyle = sliceGradient;
         ctx.fill();
 
+        // Thêm viền nhẹ để phân cách các ô
+        ctx.strokeStyle = "gold";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // === VẼ CHỮ ===
         ctx.save();
         ctx.translate(radius, radius);
         ctx.rotate(angle + arc / 2);
         ctx.textAlign = "right";
-        ctx.fillStyle = "#fff";
         ctx.font = `${size / 20}px Arial`;
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = "rgba(0,0,0,0.7)";
+        ctx.shadowBlur = 4;   // tạo bóng chữ
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
         ctx.fillText(prizes[i].text, radius - 15, 10);
         ctx.restore();
       }
 
+      // === VẼ VIỀN NGOÀI ===
       const borderGradient = ctx.createLinearGradient(0, 0, size, size);
       borderGradient.addColorStop(0, '#FFF9C4');
       borderGradient.addColorStop(0.5, '#FFD700');
@@ -164,6 +267,7 @@
       ctx.shadowColor = 'rgba(255, 215, 0, 0.9)';
       ctx.stroke();
     }
+
 
     drawWheel();
 
@@ -184,7 +288,16 @@
       canvas.addEventListener("transitionend", function handler() {
         canvas.style.transition = "none";
         spinning = false;
-        resultEl.textContent = `Chúc mừng! ${prizes[selectedIndex].noti}`;
+        resultEl.textContent = `${prizes[selectedIndex].noti}`;
+        resultEl.innerHTML = `
+          <span style="
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+          ">
+            ${prizes[selectedIndex].noti}
+          </span>
+        `;
         canvas.removeEventListener("transitionend", handler);
       });
     });
